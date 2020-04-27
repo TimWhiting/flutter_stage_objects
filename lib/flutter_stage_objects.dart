@@ -7,19 +7,36 @@ import 'package:enum_to_string/enum_to_string.dart';
 import 'package:flutter_stage/flutter_stage.dart';
 export 'package:flutter_stage/flutter_stage.dart';
 
+/// A [ShapeBuilder]
 abstract class ShapeBuilder {
   Vector3 get position => Vector3(0, 0, 0);
   Vector3 get rotation => Vector3(0, 0, 0);
   Vector3 get scale => Vector3(1, 1, 1);
+
+  /// Gets the [actor]'s children
   List<Actor> get children => [];
+
+  /// Gets the [actor] for the shape
   Actor get actor => Actor(
-      position: position, rotation: rotation, scale: scale, children: children);
+        position: position,
+        rotation: rotation,
+        scale: scale,
+        children: children,
+      );
 }
 
+/// A [Shape]
 abstract class Shape extends ShapeBuilder {
+  /// The shape's [position]
   Vector3 position;
+
+  /// The shape's [rotation]
   Vector3 rotation;
+
+  /// The shape's [scale]
   Vector3 scale;
+
+  /// Constructs a [Shape]
   Shape(this.position, this.rotation, this.scale) {
     position ??= Vector3(0, 0, 0);
     rotation ??= Vector3(0, 0, 0);
@@ -27,10 +44,18 @@ abstract class Shape extends ShapeBuilder {
   }
 }
 
+/// A [Prism]
 abstract class Prism extends Shape {
+  /// The [Prism]'s width
   double width;
+
+  /// The [Prism]'s height
   double height;
+
+  /// The [Prism]'s depth
   double depth;
+
+  /// Constructs a [Prism]
   Prism(Vector3 position, Vector3 rotation, Vector3 scale, this.width,
       this.height, this.depth)
       : super(position, rotation, scale);
@@ -171,10 +196,21 @@ extension TriangularPrismSides on Side {
   }
 }
 
+/// Creates a RectangularPrism
 class Cube extends Prism {
+  /// All of the sides of the widget
   Map<Side, Widget> sides;
-  Color color;
+
+  /// Widgets are [centered] on their side
   bool centered;
+
+  /// Autofill the side with a container with [color]
+  bool autofill;
+
+  /// All sides default to this [color]
+  Color color;
+
+  /// Creates a RectangularPrism
   Cube({
     Vector3 position,
     Vector3 rotation,
@@ -185,37 +221,53 @@ class Cube extends Prism {
     this.sides,
     this.color,
     this.centered,
+    this.autofill,
   }) : super(position, rotation, scale, width, height, depth) {
     centered ??= false;
     color ??= Colors.white;
+    autofill ??= true;
     assert(this.sides != null);
   }
+  Actor _createActor(Side s) {
+    return Actor(
+      name: s.string,
+      position: RectangularPrismSides(s).position(width, height, depth),
+      rotation: RectangularPrismSides(s).rotation,
+      scale: Vector3(1, 1, 1),
+      width: RectangularPrismSides(s).width(width, height, depth),
+      height: RectangularPrismSides(s).height(width, height, depth),
+      widget: Container(
+            color: color,
+            child: centered ? Center(child: sides[s]) : sides[s],
+          ) ??
+          Container(color: color),
+    );
+  }
+
   @override
   List<Actor> get children {
-    return Side.values.map(
-      (s) {
-        return Actor(
-          name: s.string,
-          position: RectangularPrismSides(s).position(width, height, depth),
-          rotation: RectangularPrismSides(s).rotation,
-          scale: Vector3(1, 1, 1),
-          width: RectangularPrismSides(s).width(width, height, depth),
-          height: RectangularPrismSides(s).height(width, height, depth),
-          widget: Container(
-                color: color,
-                child: centered ? Center(child: sides[s]) : sides[s],
-              ) ??
-              Container(color: color),
-        );
-      },
-    ).toList();
+    if (!autofill) {
+      return sides.keys.map((s) => _createActor(s)).toList();
+    }
+    return Side.values.map((s) => _createActor(s)).toList();
   }
 }
 
+/// A [TriangularPrism]
 class TriangularPrism extends Prism {
+  /// All of the sides of the widget
   Map<Side, Widget> sides;
-  Color color;
+
+  /// Widgets are [centered] on their side
   bool centered;
+
+  /// Autofill the side with a container with [color]
+  bool autofill;
+
+  /// All sides default to this [color]
+  Color color;
+
+  /// Creates a [TriangularPrism]
   TriangularPrism({
     Vector3 position,
     Vector3 rotation,
@@ -225,31 +277,41 @@ class TriangularPrism extends Prism {
     this.sides,
     this.color,
     this.centered,
+    this.autofill,
   }) : super(position, rotation, scale, width, height, null) {
     centered ??= false;
+    autofill ??= true;
     color ??= Colors.white;
     assert(this.sides != null);
   }
+
+  Actor _createActor(Side s) {
+    return Actor(
+      name: s.string,
+      position: TriangularPrismSides(s).position(width, height, depth),
+      rotation: TriangularPrismSides(s).rotation,
+      scale: Vector3(1, 1, 1),
+      width: TriangularPrismSides(s).width(width, height, depth),
+      height: TriangularPrismSides(s).height(width, height, depth),
+      widget: Container(
+            color: color,
+            child: centered ? Center(child: sides[s]) : sides[s],
+          ) ??
+          Container(color: color),
+    );
+  }
+
   @override
   List<Actor> get children {
+    if (!autofill) {
+      return sides.keys
+          .where((s) => s != Side.Top && s != Side.Left && s != Side.Right)
+          .map((s) => _createActor(s))
+          .toList();
+    }
     return Side.values
         .where((s) => s != Side.Top && s != Side.Left && s != Side.Right)
-        .map(
-      (s) {
-        return Actor(
-          name: s.string,
-          position: TriangularPrismSides(s).position(width, height, depth),
-          rotation: TriangularPrismSides(s).rotation,
-          scale: Vector3(1, 1, 1),
-          width: TriangularPrismSides(s).width(width, height, depth),
-          height: TriangularPrismSides(s).height(width, height, depth),
-          widget: Container(
-                color: color,
-                child: centered ? Center(child: sides[s]) : sides[s],
-              ) ??
-              Container(color: color),
-        );
-      },
-    ).toList();
+        .map((s) => _createActor(s))
+        .toList();
   }
 }

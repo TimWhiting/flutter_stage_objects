@@ -54,11 +54,8 @@ class MyHomePage extends HookWidget {
             rotation: Vector3(0, value * 360, 0),
             width: 300,
             height: 100,
+            autofill: false,
             sides: {
-              Side.Bottom: Container(
-                color: Colors.yellow,
-                child: _createText(),
-              ),
               Side.Front: Container(
                 color: Colors.green,
                 child: _createText(),
@@ -75,15 +72,13 @@ class MyHomePage extends HookWidget {
             width: 300,
             height: 200,
             depth: 100,
+            autofill: false,
             sides: {
-              Side.Top: Container(
-                color: Colors.red,
-                child: _createText(),
-              ),
               Side.Bottom: Container(
                 color: Colors.yellow,
                 child: _createText(),
               ),
+              Side.Top: null,
               Side.Left: _createText(),
               Side.Right: Container(
                 color: Colors.purple,
